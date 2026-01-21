@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { HealthResponse } from '../api/searchApi';
-import { checkHealth, loadData } from '../api/searchApi';
+import { checkHealth, createIndex } from '../api/searchApi';
 import '../styles/StatusPanel.css';
 
 export function StatusPanel() {
@@ -29,19 +29,19 @@ export function StatusPanel() {
     fetchHealth();
   }, []);
 
-  const handleLoadData = async () => {
+  const handleCreateIndex = async () => {
     setIsLoading(true);
     setMessage(null);
 
     try {
-      const result = await loadData();
+      const result = await createIndex();
       setMessage({ type: 'success', text: result.message });
-      // Refresh health after loading
+      // Refresh health after creating index
       await fetchHealth();
     } catch (err) {
       setMessage({ 
         type: 'error', 
-        text: err instanceof Error ? err.message : 'Failed to load data' 
+        text: err instanceof Error ? err.message : 'Failed to create index' 
       });
     } finally {
       setIsLoading(false);
@@ -112,14 +112,14 @@ export function StatusPanel() {
 
         <button 
           className="action-button load-button"
-          onClick={handleLoadData}
+          onClick={handleCreateIndex}
           disabled={isLoading || !health?.redis_connected}
-          title={!health?.redis_connected ? 'Connect to Redis first' : 'Load movies into Redis'}
+          title={!health?.redis_connected ? 'Connect to Redis first' : 'Create embeddings and search index from RIOT-imported data'}
         >
           {isLoading ? (
             <>
               <span className="button-spinner" />
-              <span>Loading...</span>
+              <span>Creating...</span>
             </>
           ) : (
             <>
@@ -128,7 +128,7 @@ export function StatusPanel() {
                 <polyline points="17,8 12,3 7,8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              <span>Load Movies to Redis</span>
+              <span>Create Index</span>
             </>
           )}
         </button>

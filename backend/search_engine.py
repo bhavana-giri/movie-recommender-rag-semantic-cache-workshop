@@ -268,32 +268,103 @@ class MovieSearchEngine:
         
         return formatted
     
-    def load_data(self, data_path: str = "resources/movies.json") -> bool:
+    def clear_all_data(self) -> bool:
         """
-        Load movie data into Redis index
+        Clear all movie data and search index from Redis.
+        
         Returns True if successful, False otherwise
         """
         try:
-            # Read movie data
-            df = pd.read_json(data_path)
+            # Delete the search index if it exists
+            if self.index.exists():
+                logger.info(f"Deleting search index: {INDEX_NAME}")
+                self.index.delete()
+            
+            # Delete all movie:* keys
+            logger.info("Scanning for movie keys to delete...")
+            movie_keys = list(self.client.scan_iter(match="movie:*"))
+            
+            if movie_keys:
+                logger.info(f"Deleting {len(movie_keys)} movie keys...")
+                self.client.delete(*movie_keys)
+            
+            logger.info("All movie data cleared successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error clearing data: {e}")
+            return False
+
+    def create_embeddings_and_index(self) -> bool:
+        """
+        Create embeddings and search index from RIOT-imported data.
+        
+        Reads movie data from Redis keys (imported via RIOT), generates
+        vector embeddings for descriptions, updates keys with vectors,
+        and creates the search index.
+        
+        Returns True if successful, False otherwise
+        """
+        try:
+            # Scan for all movie:* keys imported by RIOT
+            logger.info("Scanning for RIOT-imported movie keys...")
+            movie_keys = list(self.client.scan_iter(match="movie:*"))
+            
+            if not movie_keys:
+                logger.error("No movie keys found. Please run RIOT import first.")
+                return False
+            
+            logger.info(f"Found {len(movie_keys)} movie keys in Redis")
+            
+            # Read movie data from Redis
+            movies = []
+            descriptions = []
+            
+            for key in movie_keys:
+                # Get all fields from the hash
+                movie_data = self.client.hgetall(key)
+                
+                # Decode bytes to strings
+                movie = {
+                    k.decode('utf-8') if isinstance(k, bytes) else k: 
+                    v.decode('utf-8') if isinstance(v, bytes) else v 
+                    for k, v in movie_data.items()
+                }
+                
+                # Skip if no description (required for embedding)
+                if 'description' not in movie:
+                    logger.warning(f"Skipping {key}: no description field")
+                    continue
+                
+                movie['_key'] = key.decode('utf-8') if isinstance(key, bytes) else key
+                movies.append(movie)
+                descriptions.append(movie['description'])
+            
+            if not movies:
+                logger.error("No valid movies found with description field")
+                return False
+            
+            logger.info(f"Processing {len(movies)} movies with descriptions")
             
             # Generate embeddings for descriptions
             logger.info("Generating embeddings for movie descriptions...")
-            df["vector"] = self.vectorizer.embed_many(
-                df["description"].tolist(),
-                as_buffer=True
-            )
+            embeddings = self.vectorizer.embed_many(descriptions, as_buffer=True)
             
-            # Create or overwrite index
-            logger.info(f"Creating Redis index: {INDEX_NAME}")
-            self.index.create(overwrite=True, drop=True)
+            # Update each movie key with the vector embedding
+            logger.info("Updating movie keys with vector embeddings...")
+            for movie, embedding in zip(movies, embeddings):
+                key = movie['_key']
+                self.client.hset(key, "vector", embedding)
             
-            # Load data into index
-            self.index.load(df.to_dict(orient="records"))
+            # Create or overwrite the search index
+            logger.info(f"Creating Redis search index: {INDEX_NAME}")
+            self.index.create(overwrite=True)
             
+            logger.info(f"Successfully created embeddings and index for {len(movies)} movies")
             return True
+            
         except Exception as e:
-            logger.error(f"Error loading data: {e}")
+            logger.error(f"Error creating embeddings and index: {e}")
             return False
 
 

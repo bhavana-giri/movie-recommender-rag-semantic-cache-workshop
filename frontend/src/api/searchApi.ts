@@ -96,20 +96,12 @@ export async function checkHealth(): Promise<HealthResponse> {
   return response.json();
 }
 
-export async function loadData(): Promise<{ status: string; message: string }> {
-  const response = await fetch(`${API_BASE}/load-data`, {
+export async function createIndex(): Promise<{ status: string; message: string }> {
+  const response = await fetch(`${API_BASE}/create-index`, {
     method: 'POST',
   });
   if (!response.ok) {
-    throw new Error(`Load data failed: ${response.status}`);
-  }
-  return response.json();
-}
-
-export async function getGenres(): Promise<{ genres: string[] }> {
-  const response = await fetch(`${API_BASE}/genres`);
-  if (!response.ok) {
-    throw new Error(`Get genres failed: ${response.status}`);
+    throw new Error(`Create index failed: ${response.status}`);
   }
   return response.json();
 }

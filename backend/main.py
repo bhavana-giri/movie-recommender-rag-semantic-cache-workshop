@@ -198,24 +198,37 @@ async def range_search(request: RangeSearchRequest):
     )
 
 
-@app.post("/api/load-data", tags=["Admin"])
-async def load_data():
-    """Load movie data into Redis index"""
+@app.post("/api/clear-data", tags=["Admin"])
+async def clear_data():
+    """
+    Clear all movie data and search index from Redis.
+    Run this before re-importing data with RIOT.
+    """
     engine = get_engine()
-    success = engine.load_data("resources/movies.json")
+    success = engine.clear_all_data()
     
     if success:
-        return {"status": "success", "message": "Data loaded successfully"}
+        return {"status": "success", "message": "All movie data and index cleared"}
     else:
-        raise HTTPException(status_code=500, detail="Failed to load data")
+        raise HTTPException(status_code=500, detail="Failed to clear data")
 
 
-@app.get("/api/genres", tags=["Metadata"])
-async def get_genres():
-    """Get available genre options"""
-    return {
-        "genres": ["all", "action", "comedy", "romance"]
-    }
+@app.post("/api/create-index", tags=["Admin"])
+async def create_index():
+    """
+    Create embeddings and search index from RIOT-imported data.
+    
+    Prerequisites:
+    - Run RIOT import first: ./scripts/import_data.sh
+    - This reads movie:* keys from Redis, generates embeddings, and creates the search index
+    """
+    engine = get_engine()
+    success = engine.create_embeddings_and_index()
+    
+    if success:
+        return {"status": "success", "message": "Embeddings and search index created successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to create embeddings and index. Ensure RIOT import was run first.")
 
 
 if __name__ == "__main__":

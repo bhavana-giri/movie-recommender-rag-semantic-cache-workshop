@@ -88,8 +88,30 @@ Before starting this workshop, ensure you have:
 
 - **Python 3.11+** installed
 - **Node.js 20+** installed
+- **RIOT CLI** - Redis Input/Output Tools for data import
 - **Docker & Docker Compose** (optional, for containerized deployment)
 - **Redis Cloud account** - Free tier available at [redis.io/try-free](https://redis.io/try-free)
+
+### Installing RIOT
+
+RIOT (Redis Input/Output Tools) is used to import the movie dataset into Redis. Install it using one of these methods:
+
+**macOS (Homebrew):**
+
+```bash
+brew install redis/tap/riot
+```
+
+**Docker:**
+
+```bash
+# Run RIOT commands via Docker
+docker run riotx/riot --help
+```
+
+**Manual Download:**
+
+Download from [https://github.com/redis/riot](https://github.com/redis/riot)
 
 ---
 
@@ -344,7 +366,31 @@ def range_search(self, query: str, distance_threshold: float = 0.5):
 
 ## Part 5: Running the Application
 
-### Estimated time: **10 minutes**
+### Estimated time: **15 minutes**
+
+### Step 1: Import Data with RIOT
+
+First, import the movie dataset into Redis Cloud using RIOT:
+
+```bash
+# Set your Redis Cloud URL
+export REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_ENDPOINT:PORT
+
+# Run the RIOT import script
+./scripts/import_data.sh
+```
+
+This imports the raw movie data (title, genre, rating, description) into Redis with key prefix `movie:`.
+
+### Step 2: Create Embeddings and Search Index
+
+After importing data with RIOT, generate embeddings and create the search index:
+
+```bash
+curl -X POST http://localhost:8000/api/create-index
+```
+
+This reads the RIOT-imported data from Redis, generates vector embeddings for each movie description, and creates the RediSearch index.
 
 ### Option A: Run Locally (Development)
 
@@ -363,10 +409,14 @@ cd frontend
 npm run dev
 ```
 
-**Load the data into Redis Cloud:**
+**Import data and create index:**
 
 ```bash
-curl -X POST http://localhost:8000/api/load-data
+# Step 1: Import raw data with RIOT
+./scripts/import_data.sh
+
+# Step 2: Generate embeddings and create search index
+curl -X POST http://localhost:8000/api/create-index
 ```
 
 Access the application at: `http://localhost:5173`
@@ -385,8 +435,11 @@ Then build and start all services:
 # Build and start all services
 docker-compose up --build
 
-# Load data into Redis Cloud
-curl -X POST http://localhost:8000/api/load-data
+# Step 1: Import raw data with RIOT
+./scripts/import_data.sh
+
+# Step 2: Generate embeddings and create search index
+curl -X POST http://localhost:8000/api/create-index
 ```
 
 Access the application at: `http://localhost:3000`
@@ -508,6 +561,7 @@ You can see your cached embeddings in the Redis Cloud console:
 | **FastAPI** | Modern Python web framework |
 | **React + TypeScript** | Frontend development |
 | **Docker** | Containerized deployment |
+| **RIOT** | Redis Input/Output Tools for data import |
 
 ---
 
@@ -541,6 +595,8 @@ movie-recommender-rag-semantic-cache-workshop/
 │   │   └── styles/         # CSS styles
 │   ├── package.json
 │   └── vite.config.ts
+├── scripts/
+│   └── import_data.sh      # RIOT data import script
 ├── resources/
 │   └── movies.json         # Movie dataset
 ├── docker-compose.yml
@@ -562,13 +618,22 @@ If you see connection errors:
 2. Ensure your `REDIS_URL` is correct in the `.env` file
 3. Check that your IP is whitelisted in Redis Cloud security settings
 
-### Data Loading Issues
+### RIOT Import Issues
 
-If `/api/load-data` fails:
+If RIOT import fails:
 
-1. Check the backend logs for detailed error messages
-2. Verify Redis Cloud connectivity with `/api/health`
-3. Ensure your database has enough memory (30MB free tier should be sufficient)
+1. Ensure RIOT is installed: `riot --version`
+2. Verify your `REDIS_URL` environment variable is set correctly
+3. Check that the `resources/movies.json` file exists
+
+### Index Creation Issues
+
+If `/api/create-index` fails:
+
+1. Ensure RIOT import was run first (check for `movie:*` keys in Redis)
+2. Check the backend logs for detailed error messages
+3. Verify Redis Cloud connectivity with `/api/health`
+4. Ensure your database has enough memory (30MB free tier should be sufficient)
 
 ---
 
@@ -589,6 +654,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Redis Cloud - Free Trial](https://redis.io/try-free)
 - [Redis Vector Library (RedisVL)](https://github.com/redis/redis-vl-python)
 - [RediSearch Documentation](https://redis.io/docs/stack/search/)
+- [RIOT - Redis Input/Output Tools](https://github.com/redis/riot)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Sentence Transformers](https://www.sbert.net/)
 
