@@ -24,11 +24,11 @@ function getGenreColor(genre: string): string {
 
 function getScoreDisplay(movie: MovieResult, searchType: string): { label: string; value: string } | null {
   if (searchType === 'vector' || searchType === 'filtered' || searchType === 'range') {
-    if (movie.similarity !== undefined) {
+    if (movie.similarity != null) {
       return { label: 'Similarity', value: `${(movie.similarity * 100).toFixed(1)}%` };
     }
   }
-  if (searchType === 'keyword' && movie.score !== undefined) {
+  if (searchType === 'keyword' && movie.score != null) {
     return { label: 'BM25 Score', value: movie.score.toFixed(2) };
   }
   // Hybrid scores are shown in the breakdown section
@@ -79,7 +79,7 @@ export function MovieCard({ movie, index, searchType }: MovieCardProps) {
           <div className="hybrid-breakdown">
             <div className="breakdown-item">
               <span>Vector Similarity:</span>
-              <span>{movie.vector_similarity !== undefined ? movie.vector_similarity.toFixed(3) : 'N/A'}</span>
+              <span>{movie.vector_similarity?.toFixed(3) ?? 'N/A'}</span>
             </div>
             <div className="breakdown-item">
               <span>Text Score:</span>
