@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # RIOT Data Import Script
-# Imports movies.json into Redis Cloud using RIOT CLI
+# Imports movies.json into Redis using RIOT via docker-compose
 # =============================================================================
 
 set -e
@@ -11,11 +11,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 ENV_FILE="$PROJECT_DIR/.env"
 
+# Change to project directory (required for docker-compose)
+cd "$PROJECT_DIR"
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed."
+    echo ""
+    echo "Please install Docker from: https://docs.docker.com/get-docker/"
+    exit 1
+fi
+
 # Load REDIS_URL from .env file if not already set
 if [ -z "$REDIS_URL" ]; then
     if [ -f "$ENV_FILE" ]; then
-        echo "Loading REDIS_URL from .env file..."
-        # Extract REDIS_URL from .env file (handles quotes and spaces)
         REDIS_URL=$(grep -E "^REDIS_URL=" "$ENV_FILE" | cut -d '=' -f2- | tr -d '"' | tr -d "'")
         export REDIS_URL
     fi
@@ -25,48 +34,33 @@ fi
 if [ -z "$REDIS_URL" ]; then
     echo "Error: REDIS_URL not found."
     echo ""
-    echo "Please either:"
-    echo "  1. Add REDIS_URL to your .env file:"
-    echo "     REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_ENDPOINT:PORT"
-    echo ""
-    echo "  2. Or export it as an environment variable:"
-    echo "     export REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_ENDPOINT:PORT"
+    echo "Please add REDIS_URL to your .env file:"
+    echo "  REDIS_URL=redis://localhost:6379"
     exit 1
 fi
-
-# Check if RIOT is installed
-if ! command -v riot &> /dev/null; then
-    echo "Error: RIOT CLI is not installed."
-    echo ""
-    echo "Install RIOT using one of these methods:"
-    echo ""
-    echo "  macOS (Homebrew):"
-    echo "    brew install redis/tap/riot"
-    echo ""
-    echo "  Docker:"
-    echo "    docker run riotx/riot --help"
-    echo ""
-    echo "  Or download from: https://github.com/redis/riot"
-    exit 1
-fi
-
-# Data file path
-DATA_FILE="$PROJECT_DIR/resources/movies.json"
 
 # Check if data file exists
-if [ ! -f "$DATA_FILE" ]; then
-    echo "Error: Data file not found: $DATA_FILE"
+if [ ! -f "$PROJECT_DIR/resources/movies.json" ]; then
+    echo "Error: Data file not found: $PROJECT_DIR/resources/movies.json"
     exit 1
 fi
 
-echo "=== RIOT Data Import ==="
-echo "Importing: $DATA_FILE"
-echo "Target: Redis Cloud"
+echo ""
+echo "=== RIOT Data Import (Docker Compose) ==="
+echo "Importing: resources/movies.json"
+echo "Target: $REDIS_URL"
 echo ""
 
+# Pull the RIOT image if not present (need --profile for profiled services)
+docker-compose --profile tools pull riot 2>/dev/null || docker compose --profile tools pull riot
+
 # Import movies.json into Redis as Hash keys with prefix "movie:"
-# Each movie will be stored with key pattern: movie:1, movie:2, etc.
-riot file-import --uri="$REDIS_URL" "$DATA_FILE" hset --keyspace movie --key id
+# The -u (--uri) option goes after file-import command
+docker-compose --profile tools run --rm riot \
+    file-import -u "$REDIS_URL" /data/movies.json hset --keyspace movie --key id \
+    2>/dev/null || \
+docker compose --profile tools run --rm riot \
+    file-import -u "$REDIS_URL" /data/movies.json hset --keyspace movie --key id
 
 echo ""
 echo "=== Import Complete ==="
