@@ -19,4 +19,8 @@ nltk>=3.8.0
 
 # Utilities
 pydantic>=2.0.0
+requests>=2.31.0
+
+# LLM
+openai>=1.0.0
 

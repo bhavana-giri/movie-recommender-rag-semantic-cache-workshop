@@ -4,6 +4,7 @@ import { SearchTypeTabs } from './components/SearchTypeTabs';
 import { FilterPanel } from './components/FilterPanel';
 import { ResultsGrid } from './components/ResultsGrid';
 import { StatusPanel } from './components/StatusPanel';
+import { HelpCenter } from './pages/HelpCenter';
 import type { SearchType, MovieResult } from './api/searchApi';
 import {
   vectorSearch,
@@ -14,7 +15,12 @@ import {
 } from './api/searchApi';
 import './App.css';
 
+type AppPage = 'movies' | 'help';
+
 function App() {
+  // Page navigation state
+  const [currentPage, setCurrentPage] = useState<AppPage>('movies');
+
   // Search state
   const [searchType, setSearchType] = useState<SearchType>('vector');
   const [results, setResults] = useState<MovieResult[]>([]);
@@ -82,47 +88,71 @@ function App() {
     }
   }, [lastQuery, hasSearched, handleSearch]);
 
+  const isHelpPage = currentPage === 'help';
+  const isMoviesPage = currentPage === 'movies';
+
   return (
     <div className="app">
-      <header className="app-header">
-        <h1 className="app-title">Movie Recommender</h1>
-        <p className="app-subtitle">Discover movies using Redis Vector Search</p>
-      </header>
+      <nav className="app-nav">
+        <button
+          className={`nav-btn ${isMoviesPage ? 'active' : ''}`}
+          onClick={() => setCurrentPage('movies')}
+        >
+          Movie Search
+        </button>
+        <button
+          className={`nav-btn ${isHelpPage ? 'active' : ''}`}
+          onClick={() => setCurrentPage('help')}
+        >
+          Help Center
+        </button>
+      </nav>
 
-      <main className="app-main">
-        <StatusPanel />
+      {isHelpPage ? (
+        <HelpCenter />
+      ) : (
+        <>
+          <header className="app-header">
+            <h1 className="app-title">Movie Recommender</h1>
+            <p className="app-subtitle">Discover movies using Redis Vector Search</p>
+          </header>
 
-        <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+          <main className="app-main">
+            <StatusPanel />
 
-        <SearchTypeTabs activeType={searchType} onTypeChange={handleSearchTypeChange} />
+            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
 
-        <FilterPanel
-          searchType={searchType}
-          genre={genre}
-          minRating={minRating}
-          alpha={alpha}
-          distanceThreshold={distanceThreshold}
-          numResults={numResults}
-          onGenreChange={setGenre}
-          onMinRatingChange={setMinRating}
-          onAlphaChange={setAlpha}
-          onDistanceThresholdChange={setDistanceThreshold}
-          onNumResultsChange={setNumResults}
-        />
+            <SearchTypeTabs activeType={searchType} onTypeChange={handleSearchTypeChange} />
 
-        {error && (
-          <div className="error-banner">
-            {error}
-          </div>
-        )}
+            <FilterPanel
+              searchType={searchType}
+              genre={genre}
+              minRating={minRating}
+              alpha={alpha}
+              distanceThreshold={distanceThreshold}
+              numResults={numResults}
+              onGenreChange={setGenre}
+              onMinRatingChange={setMinRating}
+              onAlphaChange={setAlpha}
+              onDistanceThresholdChange={setDistanceThreshold}
+              onNumResultsChange={setNumResults}
+            />
 
-        <ResultsGrid
-          results={results}
-          searchType={searchType}
-          isLoading={isLoading}
-          hasSearched={hasSearched}
-        />
-      </main>
+            {error && (
+              <div className="error-banner">
+                {error}
+              </div>
+            )}
+
+            <ResultsGrid
+              results={results}
+              searchType={searchType}
+              isLoading={isLoading}
+              hasSearched={hasSearched}
+            />
+          </main>
+        </>
+      )}
     </div>
   );
 }

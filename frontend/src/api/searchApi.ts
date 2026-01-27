@@ -106,3 +106,94 @@ export async function createIndex(): Promise<{ status: string; message: string }
   return response.json();
 }
 
+// ============================================================================
+// Help Center Types and API
+// ============================================================================
+
+export interface HelpArticleSource {
+  id: string;
+  title: string;
+  category: string;
+  content: string;
+  similarity?: number;
+}
+
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface HelpChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  sources?: HelpArticleSource[];
+  fromCache?: boolean;
+  cacheSimilarity?: number;
+  responseTimeMs?: number;
+  tokenUsage?: TokenUsage;
+}
+
+export interface HelpChatResponse {
+  answer: string;
+  sources: HelpArticleSource[];
+  from_cache: boolean;
+  cache_similarity?: number;
+  response_time_ms: number;
+  token_usage?: TokenUsage;
+}
+
+export interface HelpSuggestionsResponse {
+  suggestions: string[];
+}
+
+export interface HelpStatsResponse {
+  index_name: string;
+  num_articles: number;
+  index_status: string;
+  cache_stats: {
+    name: string;
+    ttl: number;
+    distance_threshold: number;
+    num_entries: number;
+    status: string;
+  };
+}
+
+export interface HelpChatParams {
+  message: string;
+  use_cache?: boolean;
+}
+
+export async function helpChat(params: HelpChatParams): Promise<HelpChatResponse> {
+  return fetchApi('/help/chat', params);
+}
+
+export async function helpIngest(): Promise<{ status: string; count: number; index: string }> {
+  const response = await fetch(`${API_BASE}/help/ingest`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    throw new Error(`Ingest failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function helpSuggestions(): Promise<HelpSuggestionsResponse> {
+  const response = await fetch(`${API_BASE}/help/suggestions`);
+  if (!response.ok) {
+    throw new Error(`Failed to get suggestions: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function helpStats(): Promise<HelpStatsResponse> {
+  const response = await fetch(`${API_BASE}/help/stats`);
+  if (!response.ok) {
+    throw new Error(`Failed to get stats: ${response.status}`);
+  }
+  return response.json();
+}
+

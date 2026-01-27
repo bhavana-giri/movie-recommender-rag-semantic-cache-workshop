@@ -1,12 +1,45 @@
 .app {
   min-height: 100vh;
-  padding: 2rem;
+  padding: 0;
+}
+
+/* Navigation */
+.app-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: var(--surface, #1a1a2e);
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.nav-btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary, #8e8e9a);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #ffffff);
+}
+
+.nav-btn.active {
+  background: linear-gradient(135deg, #e50914, #b20710);
+  color: white;
+  border-color: transparent;
 }
 
 .app-header {
   text-align: center;
   margin-bottom: 3rem;
-  padding-top: 2rem;
+  padding: 2rem 2rem 0;
 }
 
 .app-title {
@@ -30,6 +63,7 @@
 .app-main {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 2rem 2rem;
 }
 
 .status-bar {

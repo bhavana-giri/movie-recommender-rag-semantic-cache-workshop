@@ -22,6 +22,11 @@ DEFAULT_NUM_RESULTS = 5
 DEFAULT_DISTANCE_THRESHOLD = 0.5
 DEFAULT_HYBRID_ALPHA = 0.5
 
+# Semantic Cache Configuration
+SEMANTIC_CACHE_NAME = "llmcache"
+SEMANTIC_CACHE_TTL = 3600  # 1 hour TTL for cached responses
+SEMANTIC_CACHE_DISTANCE_THRESHOLD = 0.5  # Lower = stricter matching (0.2 = 80% similarity)
+
 # Index Schema for Redis Vector Search
 INDEX_SCHEMA = {
     "index": {
