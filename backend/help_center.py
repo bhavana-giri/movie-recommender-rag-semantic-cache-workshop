@@ -20,7 +20,7 @@ from openai import OpenAI
 
 from .config import REDIS_URL, EMBEDDING_MODEL, OPENAI_API_KEY
 from .semantic_cache import get_semantic_cache, CacheResult
-from .guardrails import create_guardrail_router, OUT_OF_SCOPE_MESSAGE
+from .guardrails import create_guardrail_router, OUT_OF_SCOPE_MESSAGE, should_cache
 
 logger = logging.getLogger("help_center")
 
@@ -349,9 +349,13 @@ Please provide a helpful, conversational response that addresses the user's ques
         # Step 3: Generate response
         response_text, token_usage = self.generate_response(query, articles)
         
-        # Step 4: Store in cache
+        # Step 4: Store in cache (only if no PII detected)
         if use_cache:
-            cache.store(query, response_text)
+            can_cache, cache_reason = should_cache(query, response_text)
+            if can_cache:
+                cache.store(query, response_text)
+            else:
+                logger.info(f"Skipping cache storage: {cache_reason}")
         
         return ChatResponse(
             answer=response_text,
