@@ -134,6 +134,7 @@ export interface HelpChatMessage {
   cacheSimilarity?: number;
   responseTimeMs?: number;
   tokenUsage?: TokenUsage;
+  blocked?: boolean;  // True if query was blocked by guardrail
 }
 
 export interface HelpChatResponse {
@@ -143,6 +144,7 @@ export interface HelpChatResponse {
   cache_similarity?: number;
   response_time_ms: number;
   token_usage?: TokenUsage;
+  blocked?: boolean;  // True if query was blocked by guardrail
 }
 
 export interface HelpSuggestionsResponse {

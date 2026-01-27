@@ -64,6 +64,7 @@ export function HelpChat({ suggestions }: HelpChatProps) {
         cacheSimilarity: data.cache_similarity,
         responseTimeMs: data.response_time_ms,
         tokenUsage: data.token_usage,
+        blocked: data.blocked,
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
@@ -192,7 +193,9 @@ function MessageBubble({ message }: MessageBubbleProps) {
         {/* Response info for assistant messages */}
         {message.role === 'assistant' && (
           <div className="response-info">
-            {message.fromCache ? (
+            {message.blocked ? (
+              <span className="blocked-badge">Off-topic</span>
+            ) : message.fromCache ? (
               <span className="cache-badge">Cached</span>
             ) : (
               <span className="llm-badge">LLM</span>

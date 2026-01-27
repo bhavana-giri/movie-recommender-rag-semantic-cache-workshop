@@ -383,6 +383,7 @@ class HelpChatResponse(BaseModel):
     cache_similarity: Optional[float] = None
     response_time_ms: int = Field(..., description="Response time in milliseconds")
     token_usage: Optional[TokenUsageResponse] = None
+    blocked: bool = False  # True if query was blocked by guardrail
 
 
 class HelpStatsResponse(BaseModel):
@@ -441,6 +442,7 @@ async def help_chat(request: HelpChatRequest):
         cache_similarity=result.cache_similarity,
         response_time_ms=response_time_ms,
         token_usage=token_usage,
+        blocked=result.blocked,
     )
 
 

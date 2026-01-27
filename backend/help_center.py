@@ -20,6 +20,7 @@ from openai import OpenAI
 
 from .config import REDIS_URL, EMBEDDING_MODEL, OPENAI_API_KEY
 from .semantic_cache import get_semantic_cache, CacheResult
+from .guardrails import create_guardrail_router, OUT_OF_SCOPE_MESSAGE
 
 logger = logging.getLogger("help_center")
 
@@ -76,6 +77,7 @@ class ChatResponse:
     from_cache: bool
     cache_similarity: Optional[float] = None
     token_usage: Optional[TokenUsage] = None
+    blocked: bool = False  # True if query was blocked by guardrail
 
 
 class HelpCenterEngine:
@@ -102,6 +104,9 @@ class HelpCenterEngine:
         
         # Initialize OpenAI client for response generation
         self.openai_client = OpenAI(api_key=OPENAI_API_KEY)
+        
+        # Initialize guardrail router for out-of-scope query detection
+        self.router = create_guardrail_router(self.client, self.vectorizer)
         
         logger.info("HelpCenterEngine initialized")
     
@@ -309,6 +314,20 @@ Please provide a helpful, conversational response that addresses the user's ques
             ChatResponse with answer, sources, and cache status
         """
         logger.info(f"Processing chat: '{query[:50]}...'")
+        
+        # Step 0: Check guardrails - is this a StreamFlix-related question?
+        route_match = self.router(query)
+        
+        if route_match.name is None:  # No match within threshold
+            logger.info(f"Query blocked by guardrail: '{query[:50]}...' (distance: {route_match.distance})")
+            return ChatResponse(
+                answer=OUT_OF_SCOPE_MESSAGE,
+                sources=[],
+                from_cache=False,
+                blocked=True,
+            )
+        
+        logger.info(f"Query allowed: matched '{route_match.name}' (distance: {route_match.distance})")
         
         # Step 1: Check semantic cache
         if use_cache:
