@@ -112,29 +112,6 @@ Before starting this workshop, ensure you have:
 - **Docker & Docker Compose** (optional, for containerized deployment)
 - **Redis Cloud account** - Free tier available at [redis.io/try-free](https://redis.io/try-free)
 
-### Installing RIOT
-
-RIOT (Redis Input/Output Tools) is used to import the movie dataset into Redis. Install it using one of these methods:
-
-**macOS (Homebrew):**
-
-```bash
-brew install redis/tap/riot
-```
-
-**Docker:**
-
-```bash
-# Run RIOT commands via Docker
-docker run riotx/riot --help
-```
-
-**Manual Download:**
-
-Download from [https://github.com/redis/riot](https://github.com/redis/riot)
-
----
-
 ## Part 1: Redis Cloud Setup
 
 ### Estimated time: **10 minutes**
@@ -579,12 +556,7 @@ self.vectorizer = HFTextVectorizer(
 
 ### Verify in Redis Cloud
 
-You can see your cached embeddings in the Redis Cloud console:
-
-1. Go to your database in Redis Cloud
-2. Click on **Data Browser**
-3. Look for keys prefixed with `embedcache:`
-
+You can see your cached embeddings on Redis Insight
 ---
 
 ## Part 8: Help Center with RAG
@@ -775,21 +747,6 @@ def should_cache(query: str, response: str) -> Tuple[bool, str]:
 
 ---
 
-## Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Database | **Redis Cloud** (Essentials - Free Tier) |
-| Backend | Python 3.11, FastAPI, Uvicorn |
-| Vector Search | RedisVL, RediSearch |
-| Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
-| LLM | OpenAI GPT-4o-mini |
-| Guardrails | RedisVL SemanticRouter |
-| Frontend | React 19, TypeScript, Vite |
-| Deployment | Docker, Docker Compose, NGINX |
-
----
-
 ## Project Structure
 
 ```
@@ -858,12 +815,6 @@ If `/api/create-index` fails:
 
 ---
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
@@ -878,8 +829,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [RedisVL LLM Semantic Cache](https://docs.redis.com/latest/redisvl/user_guide/llmcache/)
 - [RediSearch Documentation](https://redis.io/docs/stack/search/)
 - [RIOT - Redis Input/Output Tools](https://github.com/redis/riot)
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Sentence Transformers](https://www.sbert.net/)
 
 ---
