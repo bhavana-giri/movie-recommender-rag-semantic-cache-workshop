@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import type { HelpChatMessage, HelpArticleSource } from '../api/searchApi';
 import '../styles/HelpChat.css';
 
+const API_BASE = import.meta.env.VITE_API_URL;
+
 interface HelpChatProps {
   suggestions: string[];
 }
@@ -38,7 +40,7 @@ export function HelpChat({ suggestions }: HelpChatProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/help/chat', {
+      const response = await fetch(`${API_BASE}/help/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
