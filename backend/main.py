@@ -21,16 +21,28 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS for React frontend
+# Configure CORS for React frontend (localhost + Codespaces)
+def get_allowed_origins():
+    """Build list of allowed CORS origins for both local and Codespaces environments."""
+    origins = [
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:3000",  # Docker/production frontend
+    ]
+    
+    # Add Codespaces origins if running in GitHub Codespaces
+    codespace_name = os.getenv("CODESPACE_NAME")
+    if codespace_name:
+        origins.extend([
+            f"https://{codespace_name}-5173.app.github.dev",
+            f"https://{codespace_name}-3000.app.github.dev",
+            f"https://{codespace_name}-8000.app.github.dev",
+        ])
+    
+    return origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        f"https://{os.getenv('CODESPACE_NAME')}-5173.app.github.dev" if os.getenv('CODESPACE_NAME') else None,
-        f"https://{os.getenv('CODESPACE_NAME')}-3000.app.github.dev" if os.getenv('CODESPACE_NAME') else None,
-        f"https://{os.getenv('CODESPACE_NAME')}-3000.app.github.dev:3000" if os.getenv('CODESPACE_NAME') else None
-    ],
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

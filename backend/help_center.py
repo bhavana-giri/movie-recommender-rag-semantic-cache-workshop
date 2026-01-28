@@ -91,8 +91,14 @@ class HelpCenterEngine:
     4. Store response in cache for future similar queries
     """
     
-    def __init__(self):
-        """Initialize the help center engine"""
+    def __init__(self, auto_ingest: bool = True):
+        """
+        Initialize the help center engine.
+        
+        Args:
+            auto_ingest: If True, automatically ingest articles on first run
+                        when the index doesn't exist or is empty.
+        """
         logger.info("Initializing HelpCenterEngine")
         
         self.client = Redis.from_url(REDIS_URL)
@@ -108,7 +114,39 @@ class HelpCenterEngine:
         # Initialize guardrail router for out-of-scope query detection
         self.router = create_guardrail_router(self.client, self.vectorizer)
         
+        # Auto-ingest articles on first run if index is empty
+        if auto_ingest:
+            self._ensure_index_exists()
+        
         logger.info("HelpCenterEngine initialized")
+    
+    def _ensure_index_exists(self) -> None:
+        """
+        Check if the help articles index exists and has data.
+        If not, automatically ingest articles from the default JSON file.
+        """
+        try:
+            if not self.index.exists():
+                logger.info("Help articles index not found - auto-ingesting articles...")
+                self.ingest_articles()
+                return
+            
+            # Check if index has any documents
+            info = self.index.info()
+            num_docs = info.get("num_docs", 0)
+            
+            if num_docs == 0:
+                logger.info("Help articles index is empty - auto-ingesting articles...")
+                self.ingest_articles()
+            else:
+                logger.info(f"Help articles index exists with {num_docs} documents")
+                
+        except Exception as e:
+            logger.warning(f"Could not check index status, attempting to ingest: {e}")
+            try:
+                self.ingest_articles()
+            except Exception as ingest_error:
+                logger.error(f"Auto-ingest failed: {ingest_error}")
     
     def ingest_articles(self, articles_path: str = None) -> Dict[str, Any]:
         """

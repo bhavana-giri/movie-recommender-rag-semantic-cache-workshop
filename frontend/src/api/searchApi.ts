@@ -2,9 +2,10 @@
  * API client for Movie Recommender search endpoints
  */
 
-// Use relative path in production (nginx proxies /api to backend)
-// Use localhost:8000 in development
-const API_BASE = import.meta.env.VITE_API_URL;
+// API base URL priority:
+// 1. VITE_API_URL environment variable (for custom deployments)
+// 2. Relative /api path (works with nginx proxy in Docker and Vite proxy in dev)
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export interface MovieResult {
   title: string;
