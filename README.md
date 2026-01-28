@@ -220,6 +220,16 @@ npm install
 cd ..
 ```
 
+Next, create a file `.env.local` in `/frontend`:
+
+```
+# If running in codespaces
+VITE_API_URL=https://${CODESPACE_NAME}-8000.app.github.dev/api
+
+# Else, if running on your own machine
+VITE_API_URL=http:localhost:8000/api
+```
+
 ---
 
 ## Part 3: Understanding the Data
@@ -468,6 +478,12 @@ curl -X POST http://localhost:8000/api/create-index
 ```
 
 Access the application at: `http://localhost:3000`
+
+### Running on Github Codespaces
+
+Once your frontend and backend services are up and running, go to the **ports** tab on your codespaces IDE, and change the visibility of the ports 3000 and 5173 from `private` to `public`.
+
+Then, you can access the application UI at the URL provided by Codespaces.
 
 ---
 

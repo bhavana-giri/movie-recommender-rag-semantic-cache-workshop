@@ -4,7 +4,7 @@
 
 // Use relative path in production (nginx proxies /api to backend)
 // Use localhost:8000 in development
-const API_BASE = import.meta.env.PROD ? '/api' : 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export interface MovieResult {
   title: string;
