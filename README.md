@@ -1,6 +1,6 @@
 # Movie Recommender with Redis RAG & Semantic Cache Workshop
 
-A hands-on workshop to build a movie recommendation engine using **Redis Cloud**, **Vector Search**, **RAG (Retrieval Augmented Generation)**, and **Semantic Caching**. Learn how to implement various search techniques including vector similarity search, hybrid search, full-text search, and more!
+A hands-on workshop to build a movie recommendation engine using **Redis Cloud**, **Vector Search**, **RAG (Retrieval Augmented Generation)**, and **Semantic Caching**. Learn how to implement various search techniques including vector similarity search, hybrid search, full-text search, and more! Also includes a **Help Center** with guardrails and PII protection.
 
 ![Redis Cloud](https://img.shields.io/badge/Redis_Cloud-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
@@ -21,6 +21,8 @@ A hands-on workshop to build a movie recommendation engine using **Redis Cloud**
 - [Part 5: Running the Application](#part-5-running-the-application)
 - [Part 6: Exploring Search Types](#part-6-exploring-search-types)
 - [Part 7: Semantic Caching](#part-7-semantic-caching)
+- [Part 8: Help Center with RAG](#part-8-help-center-with-rag)
+- [Part 9: Guardrails & PII Protection](#part-9-guardrails--pii-protection)
 - [Topics Covered](#topics-covered)
 
 ---
@@ -30,19 +32,22 @@ A hands-on workshop to build a movie recommendation engine using **Redis Cloud**
 This workshop guides you through building a complete movie recommendation system that leverages:
 
 - **Redis Cloud** - Fully managed Redis database with vector search capabilities
-- **Vector Similarity Search (VSS)** - Find movies by semantic meaning
-- **Full-Text Search (FTS)** - Traditional keyword-based search with BM25 scoring
+- **Vector Similarity Search** - Find movies by semantic meaning
+- **Full-Text Search** - Traditional keyword-based search with BM25 scoring
 - **Hybrid Search** - Combine vector and text search for best results
 - **Filtered Search** - Apply metadata filters (genre, rating) to vector results
 - **Range Queries** - Find results within a semantic distance threshold
-- **Semantic Caching** - Cache embeddings for faster repeated queries
+- **Semantic Caching** - Cache LLM responses for faster repeated queries
+- **Help Center RAG** - AI-powered customer support with article retrieval
+- **Semantic Router Guardrails** - Block off-topic queries using semantic routing
+- **PII Protection** - Prevent caching of personally identifiable information
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Frontend (React)                         │
-│                   http://localhost:3000                          │
+│      Movie Search UI  │  Help Center Chat  │  http://localhost:3000
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
@@ -61,12 +66,23 @@ This workshop guides you through building a complete movie recommendation system
 │  │  • Vector Search    • Hybrid Search    • Range Search        │ │
 │  │  • Filtered Search  • Keyword Search   • Embeddings Cache    │ │
 │  └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                    HelpCenterEngine                          │ │
+│  │  • RAG Pipeline     • Semantic Cache   • OpenAI LLM          │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                │                                 │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                      Guardrails                              │ │
+│  │  • Semantic Router (topic filtering)                         │ │
+│  │  • PII Detection (email, phone, SSN, credit card)            │ │
+│  └─────────────────────────────────────────────────────────────┘ │
 │                                │                                 │
 │                    ┌───────────┴───────────┐                    │
 │                    ▼                       ▼                    │
 │  ┌─────────────────────────────┐ ┌─────────────────────────────┐ │
-│  │   HuggingFace Vectorizer    │ │    Embeddings Cache         │ │
-│  │   (all-MiniLM-L6-v2)        │ │    (Redis-backed)           │ │
+│  │   HuggingFace Vectorizer    │ │    OpenAI GPT-4o-mini       │ │
+│  │   (all-MiniLM-L6-v2)        │ │    (Response Generation)    │ │
 │  └─────────────────────────────┘ └─────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
                                 │
@@ -75,10 +91,14 @@ This workshop guides you through building a complete movie recommendation system
 │                          Redis Cloud                             │
 │              redis://default:***@your-endpoint:port              │
 │                                                                  │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌────────────────┐ │
-│  │   Vector Index   │  │   Full-Text      │  │   Embeddings   │ │
-│  │   (HNSW/FLAT)    │  │   Index (BM25)   │  │   Cache        │ │
-│  └──────────────────┘  └──────────────────┘  └────────────────┘ │
+│  ┌────────────────┐ ┌────────────────┐ ┌────────────────────────┐│
+│  │  Movie Index   │ │  Help Articles │ │   Semantic Cache       ││
+│  │  (HNSW/FLAT)   │ │  Index         │ │   (LLM Responses)      ││
+│  └────────────────┘ └────────────────┘ └────────────────────────┘│
+│  ┌────────────────┐ ┌────────────────┐                          │
+│  │  Embeddings    │ │  Router Index  │                          │
+│  │  Cache         │ │  (Guardrails)  │                          │
+│  └────────────────┘ └────────────────┘                          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -178,17 +198,19 @@ pip install -r backend/requirements.txt
 
 ### Task 3: Configure Environment Variables
 
-Create a `.env` file in the project root with your Redis Cloud connection:
+Create a `.env` file in the project root with your configuration:
 
 ```bash
-# Redis Cloud Configuration
+# Redis Cloud Configuration (Required)
 REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_ENDPOINT:PORT
 
-# Optional: For advanced features
+# OpenAI API Key (Required for Help Center)
 OPENAI_API_KEY=your_openai_key_here
 ```
 
-> **Important:** Replace `YOUR_PASSWORD`, `YOUR_ENDPOINT`, and `PORT` with your actual Redis Cloud credentials from Part 1.
+> **Important:** 
+> - Replace `YOUR_PASSWORD`, `YOUR_ENDPOINT`, and `PORT` with your actual Redis Cloud credentials from Part 1.
+> - Get your OpenAI API key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys) (required for Help Center RAG features).
 
 ### Task 4: Set Up the Frontend
 
@@ -432,6 +454,9 @@ export REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_ENDPOINT:PORT
 Then build and start all services:
 
 ```bash
+# Pull required tool images (RIOT for data import)
+docker-compose --profile tools pull
+
 # Build and start all services
 docker-compose up --build
 
@@ -546,6 +571,171 @@ You can see your cached embeddings in the Redis Cloud console:
 
 ---
 
+## Part 8: Help Center with RAG
+
+### Estimated time: **15 minutes**
+
+The Help Center demonstrates a complete RAG (Retrieval Augmented Generation) pipeline for customer support.
+
+### How It Works
+
+```
+User Question → Guardrails Check → Cache Check → Article Search → LLM Response
+                     │                  │              │              │
+                     ▼                  ▼              ▼              ▼
+              Block off-topic    Return cached    Vector search   Generate with
+              queries            response         help articles   GPT-4o-mini
+```
+
+### Key Components
+
+**1. Help Article Ingestion** (`/api/help/ingest`)
+
+Ingests help articles from `resources/help_articles.json` into Redis with vector embeddings:
+
+```bash
+curl -X POST http://localhost:8000/api/help/ingest
+```
+
+**2. Chat Endpoint** (`/api/help/chat`)
+
+The main chat endpoint that processes user questions:
+
+```bash
+curl -X POST http://localhost:8000/api/help/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "How do I reset my password?", "use_cache": true}'
+```
+
+**3. HelpCenterEngine** (`backend/help_center.py`)
+
+The core RAG engine that:
+- Checks semantic cache for similar previous questions
+- Searches help articles using vector similarity
+- Generates responses using OpenAI GPT-4o-mini
+- Stores responses in cache for future queries
+
+### Try It!
+
+1. Navigate to the Help Center in the UI
+2. Ask questions like:
+   - "How do I reset my password?"
+   - "Why is my video buffering?"
+   - "How to set up parental controls?"
+3. Notice the response badges:
+   - **LLM** - Fresh response from the language model
+   - **Cached** - Retrieved from semantic cache
+   - **Off-topic** - Blocked by guardrails
+
+---
+
+## Part 9: Guardrails & PII Protection
+
+### Estimated time: **10 minutes**
+
+The application includes two important safety features to protect users and ensure quality responses.
+
+### Semantic Router Guardrails
+
+Uses RedisVL's `SemanticRouter` to detect and block off-topic queries.
+
+**How It Works:**
+
+```python
+# Define allowed topics with reference phrases
+STREAMFLIX_ROUTE = Route(
+    name="streamflix_support",
+    references=[
+        "reset password", "video buffering", "cancel subscription",
+        "billing issues", "playback quality", "device support",
+        # ... 50+ reference phrases
+    ],
+    distance_threshold=0.5,
+)
+```
+
+**Allowed Queries** (processed normally):
+- "How do I reset my password?"
+- "Why is my video buffering?"
+- "Cancel my subscription"
+
+**Blocked Queries** (returns helpful redirect):
+- "What's the weather today?"
+- "Tell me about aliens"
+- "Write Python code for sorting"
+
+### PII Detection
+
+Prevents caching of queries or responses containing personally identifiable information.
+
+**Detected PII Types:**
+- Email addresses (`user@example.com`)
+- Phone numbers (`555-123-4567`)
+- Social Security Numbers (`123-45-6789`)
+- Credit card numbers (`4111-1111-1111-1111`)
+- Account/member numbers
+- IP addresses
+- Dates of birth
+
+**How It Works:**
+
+```python
+def should_cache(query: str, response: str) -> Tuple[bool, str]:
+    """Check both query and response for PII before caching."""
+    query_has_pii, query_pii_types = detect_pii(query)
+    if query_has_pii:
+        return False, f"PII detected in query: {query_pii_types}"
+    
+    response_has_pii, response_pii_types = detect_pii(response)
+    if response_has_pii:
+        return False, f"PII detected in response: {response_pii_types}"
+    
+    return True, "No PII detected"
+```
+
+**Examples:**
+- `"My email is john@example.com"` → **Not cached** (email detected)
+- `"How do I reset my password?"` → **Cached** (no PII)
+
+### Guardrails Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        User Query                                │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   Semantic Router Check                          │
+│            Does query match StreamFlix topics?                   │
+└─────────────────────────────────────────────────────────────────┘
+                    │                       │
+                    ▼                       ▼
+            ┌───────────┐           ┌───────────────┐
+            │  Allowed  │           │   Blocked     │
+            │           │           │               │
+            │ Continue  │           │ Return help   │
+            │ to RAG    │           │ message       │
+            └───────────┘           └───────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      RAG Pipeline                                │
+│         Cache → Search → Generate → PII Check → Store            │
+└─────────────────────────────────────────────────────────────────┘
+                                        │
+                    ┌───────────────────┴───────────────────┐
+                    ▼                                       ▼
+            ┌───────────────┐                       ┌───────────────┐
+            │   No PII      │                       │   PII Found   │
+            │               │                       │               │
+            │ Store in      │                       │ Skip cache    │
+            │ cache         │                       │ (log reason)  │
+            └───────────────┘                       └───────────────┘
+```
+
+---
+
 ## Topics Covered
 
 | Topic | Description |
@@ -556,8 +746,12 @@ You can see your cached embeddings in the Redis Cloud console:
 | **Hybrid Search** | Combining vector and text scoring |
 | **Filtered Search** | Tag and numeric metadata filters |
 | **Range Queries** | Distance threshold filtering |
-| **Semantic Caching** | Redis-backed embedding cache |
+| **Semantic Caching** | Redis-backed LLM response cache |
+| **RAG Pipeline** | Retrieval Augmented Generation for Help Center |
+| **Semantic Router** | Topic-based query routing with RedisVL |
+| **PII Detection** | Protect sensitive data from caching |
 | **RedisVL** | Redis Vector Library for Python |
+| **OpenAI Integration** | GPT-4o-mini for response generation |
 | **FastAPI** | Modern Python web framework |
 | **React + TypeScript** | Frontend development |
 | **Docker** | Containerized deployment |
@@ -573,6 +767,8 @@ You can see your cached embeddings in the Redis Cloud console:
 | Backend | Python 3.11, FastAPI, Uvicorn |
 | Vector Search | RedisVL, RediSearch |
 | Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
+| LLM | OpenAI GPT-4o-mini |
+| Guardrails | RedisVL SemanticRouter |
 | Frontend | React 19, TypeScript, Vite |
 | Deployment | Docker, Docker Compose, NGINX |
 
@@ -586,19 +782,28 @@ movie-recommender-rag-semantic-cache-workshop/
 │   ├── __init__.py
 │   ├── config.py           # Configuration and schema
 │   ├── main.py             # FastAPI application
-│   ├── search_engine.py    # Core search logic
+│   ├── search_engine.py    # Movie search engine
+│   ├── help_center.py      # Help Center RAG engine
+│   ├── semantic_cache.py   # LLM response caching
+│   ├── guardrails.py       # Semantic router & PII detection
 │   └── requirements.txt    # Python dependencies
 ├── frontend/
 │   ├── src/
 │   │   ├── api/            # API client
 │   │   ├── components/     # React components
+│   │   │   ├── HelpChat.tsx    # Help Center chat UI
+│   │   │   ├── MovieCard.tsx   # Movie result card
+│   │   │   └── ...
+│   │   ├── pages/          # Page components
+│   │   │   └── HelpCenter.tsx  # Help Center page
 │   │   └── styles/         # CSS styles
 │   ├── package.json
 │   └── vite.config.ts
 ├── scripts/
 │   └── import_data.sh      # RIOT data import script
 ├── resources/
-│   └── movies.json         # Movie dataset
+│   ├── movies.json         # Movie dataset
+│   └── help_articles.json  # Help Center articles
 ├── docker-compose.yml
 ├── Dockerfile.backend
 ├── Dockerfile.frontend
@@ -653,8 +858,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [Redis Cloud - Free Trial](https://redis.io/try-free)
 - [Redis Vector Library (RedisVL)](https://github.com/redis/redis-vl-python)
+- [RedisVL Semantic Router](https://docs.redis.com/latest/redisvl/user_guide/semantic_router/)
+- [RedisVL LLM Semantic Cache](https://docs.redis.com/latest/redisvl/user_guide/llmcache/)
 - [RediSearch Documentation](https://redis.io/docs/stack/search/)
 - [RIOT - Redis Input/Output Tools](https://github.com/redis/riot)
+- [OpenAI API Documentation](https://platform.openai.com/docs)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Sentence Transformers](https://www.sbert.net/)
 
