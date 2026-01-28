@@ -3,6 +3,7 @@ FastAPI Backend for Movie Recommender
 Provides REST API endpoints for various search methods
 """
 import time
+import os
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,7 +24,13 @@ app = FastAPI(
 # Configure CORS for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        f"https://{os.getenv('CODESPACE_NAME')}-5173.app.github.dev" if os.getenv('CODESPACE_NAME') else None,
+        f"https://{os.getenv('CODESPACE_NAME')}-3000.app.github.dev" if os.getenv('CODESPACE_NAME') else None,
+        f"https://{os.getenv('CODESPACE_NAME')}-3000.app.github.dev:3000" if os.getenv('CODESPACE_NAME') else None
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
