@@ -382,8 +382,8 @@ def range_search(self, query: str, distance_threshold: float = 0.5):
 First, import the movie dataset into Redis Cloud using RIOT:
 
 ```bash
-# Set your Redis Cloud URL
-export REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_ENDPOINT:PORT
+# Set your Redis Cloud URL in the .env file
+REDIS_URL=redis://default:YOUR_PASSWORD@YOUR_ENDPOINT:PORT
 
 # Run the RIOT import script
 ./scripts/import_data.sh
