@@ -475,8 +475,8 @@ Try these searches in the UI to understand each search type:
 **Best for:** Finding movies by concept/meaning
 
 ```
-Query: "friends on an adventure"
-Returns: Zindagi Na Milegi Dobara, 3 Idiots, etc.
+Query: "Murder movies with twist"
+Returns: 
 ```
 
 ### Keyword Search (BM25)
@@ -484,8 +484,8 @@ Returns: Zindagi Na Milegi Dobara, 3 Idiots, etc.
 **Best for:** Finding movies with specific keywords
 
 ```
-Query: "gangster police"
-Returns: Movies with exact keyword matches
+Query: "Murder movies with twist"
+Returns: 
 ```
 
 ### Hybrid Search
@@ -493,9 +493,9 @@ Returns: Movies with exact keyword matches
 **Best for:** Combining semantic understanding with keyword precision
 
 ```
-Query: "revenge action"
+Query: "College friends story"
 Alpha: 0.5 (balanced)
-Returns: Best of both worlds
+Returns: 
 ```
 
 ### Filtered Search
